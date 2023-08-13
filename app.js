@@ -23,4 +23,4 @@ app.use((req, res, next) => {
 
 app.use(router);
 
-app.listen(port, console.log(`listen ${port}`));
+app.listen(port);

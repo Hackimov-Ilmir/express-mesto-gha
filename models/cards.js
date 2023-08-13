@@ -4,8 +4,8 @@ const CardSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    minlenght: 2,
-    maxlenght: 30,
+    minlength: 2,
+    maxlength: 30,
   },
   link: { type: String, required: true },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: 'user', required: true },
