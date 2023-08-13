@@ -12,11 +12,16 @@ const getUserById = (req, res) => {
   const { userId } = req.params;
 
   User.findById(userId)
+    .orFail(new Error('NotFound'))
     .then((users) => {
       res.status(200).send(users);
     })
     .catch((err) => {
-      if (err.message === 'NotFound') {
+      if (err.name === 'CastError') {
+        return res
+          .status(400)
+          .send({ message: 'Переданы некорректные данные' });
+      } if (err.message === 'NotFound') {
         return res.status(404).send({ message: 'Пользователь по указанному _id не найден' });
       }
       return res.status(500).send({ message: 'На сервере произошла ошибка' });
@@ -45,7 +50,7 @@ const createUser = (req, res) => {
 
 const updateUser = (req, res) => {
   const { name, about } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true })
+  User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
@@ -59,7 +64,7 @@ const updateUser = (req, res) => {
 
 const updateAvatar = (req, res) => {
   const { avatar } = req.body;
-  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true })
+  User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
