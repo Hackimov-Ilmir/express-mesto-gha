@@ -12,14 +12,14 @@ const app = express();
 app.use(bodyParser.json());
 const port = 3000;
 
+app.use(helmet());
+
 app.post('/signin', validationLogin, login);
 app.post('/signup', validationCreateUser, createUser);
 
 app.use(auth);
 
 app.use(router);
-
-app.use(helmet());
 
 mongoose.connect('mongodb://127.0.0.1:27017/mestodb', {
   useNewUrlParser: true,

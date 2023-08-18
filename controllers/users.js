@@ -23,7 +23,7 @@ const getUserInfo = (req, res, next) => {
       if (err.name === 'CastError') {
         next(BadRequest('Переданы некорректные данные'));
       } else if (err.message === 'NotFound') {
-        next(new NotFound('Пользователь не найден'));
+        next(err);
       } else next(err);
     });
 };
@@ -92,22 +92,19 @@ const updateUser = (req, res, next) => {
       }
       res.status(200).send(user);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(BadRequest('Переданы некорректные данные при обновлении профиля.'));
-      } else next(err);
-    });
+    .catch((err) => next(err));
 };
 
 const updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
   User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidationError' || err.name === 'CastError') {
-        next(new BadRequest('Переданы некорректные данные при обновлении профиля.'));
-      } else next(err);
-    });
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      }
+      res.status(200).send(user);
+    })
+    .catch((err) => next(err));
 };
 
 const login = (req, res, next) => {
