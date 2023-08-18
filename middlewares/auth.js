@@ -15,6 +15,7 @@ const tokenVerify = (req, res, next) => {
   }
   req.user = payload;
   next();
+  return undefined;
 };
 
 module.exports = { tokenVerify };
