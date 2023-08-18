@@ -1,5 +1,5 @@
-const bcrypt = require('bcrypt');
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
 const validator = require('validator');
 const AuthErr = require('../errors/AuthErr');
 
@@ -33,7 +33,7 @@ const UserSchema = new mongoose.Schema({
   },
 });
 
-UserSchema.statics.findUserByCredentials = function hashCreate(email, password) {
+UserSchema.statics.findUserByCredentials = function findOne(email, password) {
   return this.findOne({ email }).select('+password')
     .then((user) => {
       if (!user) {
