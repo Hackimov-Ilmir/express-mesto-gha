@@ -1,4 +1,8 @@
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/users');
+const BadRequest = require('../errors/BadRequest');
+const NotFound = require('../errors/NotFound');
 
 const getUsers = (req, res) => {
   User.find()
@@ -6,6 +10,23 @@ const getUsers = (req, res) => {
       res.status(200).send(users);
     })
     .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+};
+
+const getUserInfo = (req, res, next) => {
+  User.findById(req.user._id)
+    .then((user) => {
+      if (!user) {
+        throw new NotFound('Пользователь не найден');
+      }
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(BadRequest('Переданы некорректные данные'));
+      } else if (err.message === 'NotFound') {
+        next(new NotFound('Пользователь не найден'));
+      } else next(err);
+    });
 };
 
 const getUserById = (req, res) => {
@@ -29,23 +50,36 @@ const getUserById = (req, res) => {
 };
 
 const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-
-  User.create({ name, about, avatar })
-    .then((user) => {
-      res.status(201).send(user);
+  const {
+    name,
+    about,
+    avatar,
+    email,
+    password,
+  } = req.body;
+  bcrypt.hash(password, 10).then((hash) => {
+    User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res
-          .status(400)
-          .send({
-            message: 'Переданы некорректные данные при создании пользователя.',
-          });
-      } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
-      }
-    });
+      .then((user) => {
+        res.status(201).send(user);
+      })
+      .catch((err) => {
+        if (err.name === 'ValidationError') {
+          res
+            .status(400)
+            .send({
+              message: 'Переданы некорректные данные при создании пользователя.',
+            });
+        } else {
+          res.status(500).send({ message: 'На сервере произошла ошибка' });
+        }
+      });
+  });
 };
 
 const updateUser = (req, res) => {
@@ -77,10 +111,24 @@ const updateAvatar = (req, res) => {
     });
 };
 
+const login = (req, res, next) => {
+  const { email, password } = req.body;
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, '42513328af428502c52e0d692bca7d27e70356e2dc2f8a397dbd2a81f11213f8', {
+        expiresIn: '7d',
+      });
+      res.send({ token });
+    })
+    .catch(next);
+};
+
 module.exports = {
   getUsers,
   createUser,
   getUserById,
   updateUser,
   updateAvatar,
+  login,
+  getUserInfo,
 };

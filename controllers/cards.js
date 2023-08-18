@@ -1,17 +1,18 @@
 const Card = require('../models/cards');
+const NotFound = require('../errors/NotFound');
+const CurrentErr = require('../errors/CurrentErr');
+const BadRequest = require('../errors/BadRequest');
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   const owner = req.user._id;
   Card.create({ name, link, owner })
     .then((cards) => res.status(201).send(cards))
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(400).send({
-          message: 'Переданы некорректные данные при создании карточки.',
-        });
+        next(new BadRequest('Переданы некорректные данные при создании карточки'));
       } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
+        next(err);
       }
     });
 };
@@ -22,12 +23,15 @@ const getCards = (req, res) => {
     .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
 };
 
-const deleteCard = (req, res) => {
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) {
-        return res.status(404).send({ message: 'Передан несуществующий _id карточки' });
+        throw new NotFound('Карточка не найдена');
+      }
+      if (!card.owner.equals(req.user._id)) {
+        return next(new CurrentErr('Вы не можете удалить чужую карточку'));
       }
       return res.status(200).send(card);
     })
@@ -50,7 +54,7 @@ const likeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({ message: 'Передан несуществующий _id карточки' });
+        throw new NotFound('Карточка не найдена');
       }
       return res.status(200).send(card);
     })
@@ -72,7 +76,7 @@ const dislikeCard = (req, res) => {
   )
     .then((card) => {
       if (!card) {
-        return res.status(404).send({ message: 'Передан несуществующий _id карточки' });
+        throw new NotFound('Карточка не найдена');
       }
       return res.status(200).send(card);
     })
