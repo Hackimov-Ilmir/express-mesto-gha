@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const router = require('./routes/index');
 const { login, createUser } = require('./controllers/users');
 const { validationCreateUser, validationLogin } = require('./middlewares/validation');
+const { tokenVerify } = require('./middlewares/auth');
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(bodyParser.json());
 
 app.post('/signin', validationLogin, login);
 app.post('/signup', validationCreateUser, createUser);
+app.use(tokenVerify);
 
 app.use(router);
 
