@@ -22,9 +22,7 @@ const getUserInfo = (req, res, next) => {
     .catch((err) => {
       if (err.name === 'CastError') {
         next(BadRequest('Переданы некорректные данные'));
-      } else if (err.message === 'NotFound') {
-        next(err);
-      }
+      } else next(err);
     });
 };
 
