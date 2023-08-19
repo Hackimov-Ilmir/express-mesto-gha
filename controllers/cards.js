@@ -25,15 +25,19 @@ const getCards = (req, res, next) => {
 
 const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-  Card.findByIdAndRemove(cardId)
+  Card.findOne({ _id: cardId })
+    .orFail(() => {
+      throw new NotFound('Карточка не найдена');
+    })
     .then((card) => {
-      if (!card) {
-        throw new NotFound('Карточка не найдена');
-      }
-      if (!card.owner.equals(req.user._id)) {
-        return next(new CurrentErr('Вы не можете удалить чужую карточку'));
-      }
-      return res.status(200).send(card);
+      if (req.user._id === card.owner._id.toString()) {
+        Card.findByIdAndRemove(cardId)
+          .then((card2) => res.status(200).send(card2))
+          .catch((err) => {
+            if (err.name === 'CastError') next(new NotFound('Карточка не найдена'));
+            else next(err);
+          });
+      } else next(new CurrentErr('Вы не можете удалить чужую карточку'));
     })
     .catch(next);
 };

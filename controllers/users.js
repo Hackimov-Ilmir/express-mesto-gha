@@ -24,7 +24,7 @@ const getUserInfo = (req, res, next) => {
         next(BadRequest('Переданы некорректные данные'));
       } else if (err.message === 'NotFound') {
         next(err);
-      } else next(err);
+      }
     });
 };
 
